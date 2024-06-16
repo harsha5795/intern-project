@@ -40,14 +40,13 @@ public class SecurityConfig{
     @Bean
     public CustomerUserDetailsService userDetailsService() {
         return new CustomerUserDetailsService();
-}
-
+    }
+//  used to load user from the database
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public PasswordEncoder passwordEncoder(){
+        return NoOpPasswordEncoder.getInstance();
     }
-
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
@@ -61,43 +60,68 @@ public class SecurityConfig{
         authenticationProvider.setPasswordEncoder(passwordEncoder());
         return authenticationProvider;
     }
-
+//  Here we are essentially setting up the rules and methods that will be used to verify and
+//  authenticate users in our application.
+//  providing userDetailsService class to load user from the database
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.csrf(csrf -> csrf.disable()).cors(cors -> cors.configurationSource(request -> {
+        return http.
+
+                // Disable CSRF protection because we're using JWT tokens for authentication
+                csrf(csrf -> csrf.disable())
+
+                // Configure CORS to allow requests from any origin, method, and header
+                .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
                     configuration.setAllowedOrigins(Arrays.asList("*"));
                     configuration.setAllowedMethods(Arrays.asList("*"));
                     configuration.setAllowedHeaders(Arrays.asList("*"));
                     return configuration;
-                })).authorizeHttpRequests(auth -> auth
+                }))
+
+                // Allow unrestricted access to login, signup, and forgotPassword endpoints
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/user/login", "/user/signup", "/user/forgotPassword").permitAll()
                         .anyRequest().authenticated()
                 )
+
+                // Configure session management to be stateless
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // Configure custom authentication provider
                 .authenticationProvider(authenticationProvider())
+
+                // Add JWT token authentication filter before UsernamePasswordAuthenticationFilter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // Build the security filter chain
                 .build();
     }
 
-//    protected void configure(HttpSecurity http) throws Exception {
-//        http.cors().configurationSource(request -> new CorsConfiguration().applyPermitDefaultValues())
-//                .and()
-//                .csrf().disable()
-//                .authorizeRequests()
-//                .antMatchers("/user/login" , "/user/signup" , "/user/forgotPassword")
-//                .permitAll()
-//                .anyRequest()
-//                .authenticated()
-//                .and().exceptionHandling()
-//                .and()
-//                .sessionManagement()
-//                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-//
-//        http.addFilterBefore(jwtFilter , UsernamePasswordAuthenticationFilter.class);
-//
-//    }
+//  (Cross-Site Request Forgery):
+//    When you're logged into your online banking, if you unknowingly visit a sneaky website, it can secretly
+//    submit a form in the background with appropriate url forgery. This form might instruct your browser to
+//    transfer money from your bank account to the attacker's account, taking advantage of your logged-in session
+//    without your permission. This sneaky trick is called CSRF.
+//  Disabling CSRF protection with JWT means we trust that the JWT token itself is secure enough to verify the user's
+//  identity and prevent malicious actions.
+
+
+//  Stateful Session:
+//    Normally, when you log into a website, the server creates a session for your browser. This session stores
+//    information about your login status, permissions, etc. Each subsequent request from your browser includes a
+//    session ID, which the server uses to identify and manage your session.
+//  Stateless Session:
+//    In a stateless configuration, the server does not keep any session information. Each request must include all
+//    necessary details for the server to authenticate and authorize the request. This typically involves using tokens
+//    (like JWTs) that contain user information and are validated with each requ
+//  By configuring session management as stateless, Spring Security ensures that each request stands alone and contains all
+//  necessary authentication details.
+
+
+//  Spring Security uses a series of filters to handle different aspects of security.
+//  So we are adding JWT Filter before the inbuilt UsernamePasswordAuthenticationFilter
 
 
 }

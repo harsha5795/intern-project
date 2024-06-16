@@ -16,6 +16,7 @@ public interface UserController {
 //  By using this, Spring will convert the user input in JSON format into a
 //  Map<String, String> object and pass it to the signUp method for further processing.
 
-
+    @PostMapping(path = "/login")
+    public ResponseEntity<String> login(@RequestBody(required = true) Map<String, String> requestMap);
 
 }

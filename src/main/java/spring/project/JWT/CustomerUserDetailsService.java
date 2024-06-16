@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Objects;
 
+//this class use is to load the User(datatype = inbuiltly provided by spring not that
+//one defined by us) by providing his username
 @Slf4j
 @Service
 public class CustomerUserDetailsService implements UserDetailsService {

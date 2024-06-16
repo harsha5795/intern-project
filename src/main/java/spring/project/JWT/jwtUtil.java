@@ -30,7 +30,7 @@ public class jwtUtil {
     }
 //    extractClaims is a function for which parameters are token and a method that decides
 //    which part to extract.
-//    its return value it T that is it can be anything depends on the method parameter i.e
+//    its return value is T that is it can be anything depends on the method parameter i.e
 //    String, Integer etc..
 //    claimsresolver can be any function like extractusername, extractexpiration which takes
 //    Claims as input and T as output

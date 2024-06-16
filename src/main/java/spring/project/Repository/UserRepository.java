@@ -16,4 +16,5 @@ public interface UserRepository extends JpaRepository<User, Integer> {
    //Now, Spring Data JPA automatically generates a query.
 
 
+
 }
