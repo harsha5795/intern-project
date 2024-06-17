@@ -1,5 +1,6 @@
 package spring.project.Service;
 
+import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,10 +15,11 @@ import spring.project.Models.User;
 import spring.project.Repository.UserRepository;
 import spring.project.Service.UserService;
 import spring.project.Utils.CafeUtils;
+import spring.project.Utils.EmailUtil;
 import spring.project.constants.Cafeconstants;
+import spring.project.wrapper.UserWrapper;
 
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Slf4j
 //Instead of manually creating a logger instance in each class, @Slf4j does it for you.
@@ -72,6 +74,8 @@ public class UserServiceImp implements UserService {
         }
         return CafeUtils.getResponeEntity(Cafeconstants.SOMETHING_WENT_WRONG, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+//  When a request is made to the signup endpoint, the HTTP request first goes through the filter chain and DoFilterInternal is one of the filters.
+//  As this request matches one of public endpoints, the filter directly transfers the request and current response to the controller.
 //  even though the signUp method itself does not include explicit security calls, it is related with the security.
 //  Spring Security works by intercepting requests before they reach your application’s endpoints.
 //  When you configure your security settings, you define which URLs should be accessible without authentication and which ones require it.
@@ -113,6 +117,8 @@ public class UserServiceImp implements UserService {
         return new ResponseEntity<String>("{\"message\":\"" + "Bad Credentials." + "\"}",
                 HttpStatus.BAD_REQUEST);
     }
+//  When a request is made to the login endpoint, the HTTP request first goes through the filter chain and DoFilterInternal is one of the filters.
+//  As this request matches one of public endpoints, the filter directly transfers the request and current response to the controller.
 //  In the login method, a UsernamePasswordAuthenticationToken is created with the email and password from requestMap.
 //  The authenticationManager.authenticate method uses this token to verify credentials against configured authentication providers (e.g., a database). This typically involves:
 //    Loading the user details (using a service such as UserDetailsService).
@@ -120,8 +126,102 @@ public class UserServiceImp implements UserService {
 //  If the credentials are valid, a fully authenticated Authentication object is returned with the isAuthenticated flag set to true.
 //  If credentials are invalid, an AuthenticationException is thrown, and the isAuthenticated flag remains false.
 
+    @Override
+    public ResponseEntity<List<UserWrapper>> getAllUser() {
+        try {
+            if (jwtFilter.isAdmin()) {
+                return new ResponseEntity<>(userRepository.getAllUser(), HttpStatus.OK);
+
+            } else {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.UNAUTHORIZED);
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+//  When a request is made to the getAllUser endpoint, the HTTP request first goes through the filter chain and DoFilterInternal is one of the filters.
+//  As this request doesnt matches any public endpoints, then it will mark the user as authenticated if he is eligible, and pass to next filter.
 
 
+    @Autowired
+    EmailUtil emailUtil;
 
+    @Override
+    public ResponseEntity<String> update(Map<String, String> requestMap) {
+        try {
+            if (jwtFilter.isAdmin()) {
+                Optional<User> optional = userRepository.findById(Integer.parseInt(requestMap.get("id")));
+                //Integer.parseInt is to convert String to integer
+
+                if (!optional.isEmpty()) {
+
+                    userRepository.updateStatus(requestMap.get("status"), Integer.parseInt(requestMap.get("id")));
+                    sendMailToAllAdmin(requestMap.get("status"), optional.get().getEmail(), userRepository.getAllAdmin_mails());
+                    return CafeUtils.getResponeEntity("User Status is updated Successfully", HttpStatus.OK);
+
+                } else {
+                    return CafeUtils.getResponeEntity("User id doesn't exist", HttpStatus.OK);
+                }
+            } else {
+                return CafeUtils.getResponeEntity(Cafeconstants.UNAUTHORIZED_ACCESS, HttpStatus.UNAUTHORIZED);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return CafeUtils.getResponeEntity(Cafeconstants.SOMETHING_WENT_WRONG, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private void sendMailToAllAdmin(String status, String user, List<String> allAdmin) {
+        allAdmin.remove(jwtFilter.getCurrentUsername());
+        if (status != null && status.equalsIgnoreCase("true")) {
+            emailUtil.SendSimpleMessage(jwtFilter.getCurrentUsername(), "Account Approved", "USER:- " + user + "\n is approved by\nADMIN:-" + jwtFilter.getCurrentUsername(),  allAdmin);
+        } else {
+            emailUtil.SendSimpleMessage(jwtFilter.getCurrentUsername(), "Account Disabled", "USER:- " + user + "\n is disabled by\nADMIN:-" + jwtFilter.getCurrentUsername(),  allAdmin);
+        }
+    }
+
+    @Override
+    public ResponseEntity<String> checkToken() {
+        return CafeUtils.getResponeEntity("true", HttpStatus.OK);
+    }
+    //this will return true only if the provided token is valid.
+
+
+    @Override
+    public ResponseEntity<String> changePassword(Map<String, String> requestMap) {
+        try {
+            User user = userRepository.findByEmail(jwtFilter.getCurrentUsername());
+            if (!user.equals(null)) {
+                if (user.getPassword().equals(requestMap.get("oldPassword"))) {
+                    user.setPassword(requestMap.get("newPassword"));
+                    userRepository.save(user);
+                    return CafeUtils.getResponeEntity("Password Updated Successfully", HttpStatus.OK);
+                }
+                return CafeUtils.getResponeEntity("Incorrect Old Password", HttpStatus.BAD_REQUEST);
+            }
+            return CafeUtils.getResponeEntity(Cafeconstants.SOMETHING_WENT_WRONG, HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return CafeUtils.getResponeEntity(Cafeconstants.SOMETHING_WENT_WRONG, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Override
+    public ResponseEntity<String> forgetPassword(Map<String, String> requestMap) {
+        try {
+            User user = userRepository.findByEmail(requestMap.get("email"));
+            if (!Objects.isNull(user) && !Strings.isNullOrEmpty(user.getEmail())) {
+                emailUtil.forgetMail(user.getEmail() , "Credentials by Cafe Management System" , user.getPassword());
+
+            return CafeUtils.getResponeEntity("Check Your mail for Credentials", HttpStatus.OK);
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return CafeUtils.getResponeEntity(Cafeconstants.SOMETHING_WENT_WRONG, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
 }

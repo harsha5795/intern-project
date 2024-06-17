@@ -43,45 +43,45 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, FilterChain filterChain) throws ServletException, IOException {
-        // Check if the request path matches any of the public endpoints
         if (httpServletRequest.getServletPath().matches("/user/login|/user/forgotPassword|/user/signup")) {
-            // If it matches, allow the request to proceed without authentication
             filterChain.doFilter(httpServletRequest, httpServletResponse);
         } else {
-            // For other endpoints, attempt to extract and validate JWT token
             String authorizationHeader = httpServletRequest.getHeader("Authorization");
             String token = null;
-            String username = null; // Initialize username variable
+//            String username = null;
 
-            // Check if Authorization header with Bearer token is present
             if (authorizationHeader != null && authorizationHeader.startsWith("Bearer")) {
                 token = authorizationHeader.substring(7); // Extract JWT token from Authorization header
                 username = jwtUtil.extractUsername(token); // Extract username from JWT token
                 claims = jwtUtil.extractAllClaims(token); // Extract all claims from JWT token
             }
 
-            // If username is extracted and there is no authenticated user context
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // Load user details from database based on the extracted username
                 UserDetails userDetails = customerUserDetailsService.loadUserByUsername(username);
 
-                // Validate the extracted JWT token against loaded user details
                 if (jwtUtil.validatetoken(token, userDetails)) {
-                    // Create Authentication token using loaded user details
                     UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
                             new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
-                    // Set additional authentication details from the request
                     usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(httpServletRequest));
 
-                    // Set this Authentication token into SecurityContextHolder for future reference
                     SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
                 }
             }
-
-            // Proceed with the filter chain after potential authentication setup
             filterChain.doFilter(httpServletRequest, httpServletResponse);
         }
     }
+
+// When a request is made it must go through the series of filter chain before it goes to the controller
+// In our application, doFilterInternal is one of the filters
+// The method checks if the request path matches any of the public endpoints (/user/login, /user/forgotPassword, /user/signup).
+// 1)If it matches, the filter directly transfers the request and current response to the next filter.
+// 2)If the request path does not match these public endpoints,
+//    The filter retrieves the Authorization header from the request and extracts the JWT token and extracts the username and claims from the token using jwtUtil.
+//    If the username from the extracted token is not null and there is no existing authenticated user named by that username in the SecurityContextHolder
+//       a)it will make add that user as authenticated in SecurityContextHolder only if that corresponding token is valid i.e it checks whether the username
+//         extracted from the token exists in the database or not and expiry time of the token
+//       b)it will not mark that user as authenticated in SecurityContextHolder if that token is not valid
+//   Now the filter transfers the request and current response to the next filter
 
 }

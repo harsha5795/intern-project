@@ -72,7 +72,7 @@ public class jwtUtil {
         return (Username.equals(userDetails.getUsername()) && !isTokenExpired(token) );
     }
 //    here in validation, 2 things are verified.
-//    a)username from the token is extracted and using that username, its corresponding details
-//      from the database is acquired and then compared.
+//    a)username from the token is extracted and using that username, it will check whether that corresponding user
+//      exists in the database or not.
 //    b)checks the expiry time of token
 }

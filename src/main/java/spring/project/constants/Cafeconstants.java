@@ -5,5 +5,7 @@ public class Cafeconstants {
     //static so that no need of object creation, final indicates its value cannot be modified.
     public static final String INVALID_DATA = "Invalid Data.";
 
+    public static final String UNAUTHORIZED_ACCESS = "unauthorized access.";
+
 
 }

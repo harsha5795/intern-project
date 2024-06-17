@@ -51,6 +51,20 @@ import java.io.Serializable;
 //findByEmailId is the name of the named query.
 //Make sure that you use class conventions in java code but not in actual database.
 
+
+@NamedQuery(name = "User.getAllUser", query = "select " +
+                "new spring.project.wrapper.UserWrapper(u.id , u.name , u.email , u.contactNumber , u.status) " +
+                "from User u where u.role = 'user'")
+//retreiving the user values from the database and send them as parameteres to the UserWrapper constructor and
+// returning the UserWrapper object.
+//make sure you are using attribute names in u.id, u.email, etc... must be of java code.
+
+
+@NamedQuery(name = "User.updateStatus", query = "update User u set u.status=:status where u.id =:id")
+
+@NamedQuery(name = "User.getAllAdmin_mails", query = "select u.email from User u where u.role = 'admin'")
+
+
 @Getter
 @Setter
 @NoArgsConstructor
