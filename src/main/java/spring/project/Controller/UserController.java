@@ -20,13 +20,13 @@ public interface UserController {
 //  Map<String, String> object and pass it to the signUp method for further processing.
 
     @PostMapping(path = "/login")
-    public ResponseEntity<String> login(@RequestBody(required = true) Map<String, String> requestMap);
+    public ResponseEntity<String> login(@RequestBody Map<String, String> requestMap);
 
     @GetMapping(path = "/get")
     public ResponseEntity<List<UserWrapper>> getAllUser();
 
     @PostMapping(path = "/update")
-    public ResponseEntity<String> update(@RequestBody(required = true) Map<String, String> requestMap);
+    public ResponseEntity<String> update(@RequestBody Map<String, String> requestMap);
 
     @GetMapping(path = "/checkToken")
     public ResponseEntity<String> checkToken();
