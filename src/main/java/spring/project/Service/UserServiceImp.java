@@ -58,10 +58,12 @@ public class UserServiceImp implements UserService {
         log.info("Inside signup {}", requestMap);
         try {
             if (validateSignUpMap(requestMap)) {
-                //System.out.println("inside validaSignUpMap");
                 User user = userRepository.findByEmailId(requestMap.get("email"));
                 if (Objects.isNull(user)) {
                     userRepository.save(getUserFromMap(requestMap));
+                    //.save operation is first it check if there is an object with this id
+                    //if not there creates a new object
+                    //if there then replaces that object
                     return CafeUtils.getResponeEntity("Successfully  Registered.", HttpStatus.OK);
                 } else {
                     return CafeUtils.getResponeEntity("Email already exits.", HttpStatus.BAD_REQUEST);

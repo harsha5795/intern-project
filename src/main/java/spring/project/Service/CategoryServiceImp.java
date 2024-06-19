@@ -25,25 +25,7 @@ public class CategoryServiceImp implements CategoryService{
 
     @Autowired
     JwtFilter jwtFilter;
-    @Override
-    public ResponseEntity<String> addNewCategory(Map<String, String> requestMap) {
-        log.info("Inside addNewCategory{}", requestMap);
-        try {
-            if(jwtFilter.isAdmin()){
-                if(validateCategoryMap(requestMap, false)){
-                    categoryRepository.save(getCategoryFromMap(requestMap , false));
-                    return CafeUtils.getResponeEntity("Category Added Successfully", HttpStatus.OK);
-                }
-            }else{
-                return CafeUtils.getResponeEntity(Cafeconstants.UNAUTHORIZED_ACCESS, HttpStatus.UNAUTHORIZED);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        //System.out.println(CafeConstants.SOMETHING_WENT_WRONG);
-        return CafeUtils.getResponeEntity(Cafeconstants.SOMETHING_WENT_WRONG, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-    //in this we will not provide id, so validate_id=false
+
 
     private boolean validateCategoryMap(Map<String, String> requestMap, boolean validateId) {
         if (requestMap.containsKey("name")) {
@@ -65,10 +47,32 @@ public class CategoryServiceImp implements CategoryService{
     }
 
     @Override
+    public ResponseEntity<String> addNewCategory(Map<String, String> requestMap) {
+        log.info("Inside addNewCategory{}", requestMap);
+        try {
+            if(jwtFilter.isAdmin()){
+                if(validateCategoryMap(requestMap, false)){
+                    categoryRepository.save(getCategoryFromMap(requestMap , false));
+                    return CafeUtils.getResponeEntity("Category Added Successfully", HttpStatus.OK);
+                }
+                return CafeUtils.getResponeEntity(Cafeconstants.INVALID_DATA, HttpStatus.BAD_REQUEST);
+            }else{
+                return CafeUtils.getResponeEntity(Cafeconstants.UNAUTHORIZED_ACCESS, HttpStatus.UNAUTHORIZED);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        //System.out.println(CafeConstants.SOMETHING_WENT_WRONG);
+        return CafeUtils.getResponeEntity(Cafeconstants.SOMETHING_WENT_WRONG, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    //in this we will not provide id, so validate_id=false
+
+
+    @Override
     public ResponseEntity<List<Category>> getAllCategory(String filterValue) {
         try {
             if(!Strings.isNullOrEmpty(filterValue) && filterValue.equalsIgnoreCase("true")) {
-                return new ResponseEntity<List<Category>>(new ArrayList<>(), HttpStatus.OK);
+                return new ResponseEntity<List<Category>>(categoryRepository.getAllCategory(), HttpStatus.OK);
             }
             return new ResponseEntity<>(categoryRepository.findAll(), HttpStatus.OK);
         } catch (Exception ex) {
