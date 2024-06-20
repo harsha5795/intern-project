@@ -7,5 +7,8 @@ public class Cafeconstants {
 
     public static final String UNAUTHORIZED_ACCESS = "unauthorized access.";
 
+    public static final String STORE_LOCATION = "C:\\Users\\mchan\\OneDrive\\Desktop\\intern\\bills";
+
+
 
 }
